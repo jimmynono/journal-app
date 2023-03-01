@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { doc, getDoc, deleteDoc, setDoc } from 'firebase/firestore';
 import db from '../db';
+import firebase from 'firebase/compat/app';
+
 
 export default function JournalEntry() {
     const { id } = useParams();
@@ -9,9 +11,24 @@ export default function JournalEntry() {
     const [hasError, setHasError] = useState(false);
     const [entry, setEntry] = useState([])
     const nav = useNavigate()
+    const [user, setUser] = useState({})
+
 
     useEffect(() => {
-        const entryRef = doc(db, 'journal-entries', id)
+        const unregisterAuthObserver = firebase.auth().onAuthStateChanged(user => {
+            console.log(user);
+            setUser(user)
+        })
+
+        return () => unregisterAuthObserver();
+    }, [])
+
+    useEffect(() => {
+        if (!user.uid) {
+            return;
+        }
+
+        const entryRef = doc(db, 'users', user.uid, 'journal-entries', id)
         getDoc(entryRef).then(docSnap => {
             setIsLoading(false);
 
@@ -23,7 +40,7 @@ export default function JournalEntry() {
             }
 
         })
-    }, [id])
+    }, [user.uid])
 
     if (isLoading) {
         return <p>loading...</p>

@@ -3,39 +3,29 @@ import { collection, getDocs, onSnapshot, orderBy, query, deleteDoc, doc } from 
 import db from '../db';
 import { Link } from 'react-router-dom';
 import AddJournal from './AddJournal';
+import firebase from 'firebase/compat/app';
 
 export default function Journal() {
     const [entries, setEntries] = useState([])
     const [isLoading, setIsLoading] = useState(true);
     const [hasError, setHasError] = useState(false);
+    const [user, setUser] = useState({})
+
     useEffect(() => {
-        // const getData = async () => {
-        //     const querySnapshot = await getDocs(collection(db, "journal-entries"));
-        //     console.log(querySnapshot.docs)
-        //     querySnapshot.forEach((doc) => {
-        //         // doc.data() is never undefined for query doc snapshots
-        //         console.log(doc.id, " => ", doc.data());
-        //     });
-        // }
-        // getData();
+        const unregisterAuthObserver = firebase.auth().onAuthStateChanged(user => {
+            setUser(user)
+        })
 
-        // getDocs(collection(db, 'journal-entries')).then(
-        //     snapshot => {
-        //         // snapshot.forEach(doc => {
-        //         //     console.log(doc.data())
-        //         // })
-        //         setEntries(snapshot.docs);
-        //         setIsLoading(false);
-        //     },
-        //     error => {
-        //         console.log(error);
-        //         setIsLoading(false);
-        //         setHasError(true);
-        //     }
-        // )
+        return () => unregisterAuthObserver();
+    }, [user.uid])
 
+    useEffect(() => {
+
+        if (!user.uid) {
+            return;
+        }
         const entriesQuery = query(
-            collection(db, 'journal-entries'),
+            collection(db, 'users', 'BuQm7gs4XxvIPPh4tAAx', 'journal-entries'),
             orderBy('createdAt', 'desc')
         )
 
@@ -53,7 +43,7 @@ export default function Journal() {
         )
 
         return () => unsubscribe();
-    }, [])
+    }, [user.uid])
 
     if (isLoading) {
         return <p>loading...</p>
